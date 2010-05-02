@@ -136,6 +136,7 @@ module Paperclip
 
         base.instance_eval do
           @s3_credentials = parse_credentials(@options[:s3_credentials])
+          @server         = @options[:server]           || @s3_credentials[:server] || 's3.amazonaws.com'
           @bucket         = @options[:bucket]         || @s3_credentials[:bucket]
           @bucket         = @bucket.call(self) if @bucket.is_a?(Proc)
           @s3_options     = @options[:s3_options]     || {}
@@ -153,16 +154,20 @@ module Paperclip
           "#{attachment.s3_protocol}://#{attachment.s3_host_alias}/#{attachment.path(style).gsub(%r{^/}, "")}"
         end
         Paperclip.interpolates(:s3_path_url) do |attachment, style|
-          "#{attachment.s3_protocol}://s3.amazonaws.com/#{attachment.bucket_name}/#{attachment.path(style).gsub(%r{^/}, "")}"
+          "#{attachment.s3_protocol}://#{attachment.server}/#{attachment.bucket_name}/#{attachment.path(style).gsub(%r{^/}, "")}"
         end
         Paperclip.interpolates(:s3_domain_url) do |attachment, style|
-          "#{attachment.s3_protocol}://#{attachment.bucket_name}.s3.amazonaws.com/#{attachment.path(style).gsub(%r{^/}, "")}"
+          "#{attachment.s3_protocol}://#{attachment.bucket_name}.#{attachment.server}/#{attachment.path(style).gsub(%r{^/}, "")}"
         end
       end
 
       def expiring_url(time = 3600)
         AWS::S3::S3Object.url_for(path, bucket_name, :expires_in => time )
       end
+
+     def server
+       @server
+     end
 
       def bucket_name
         @bucket
